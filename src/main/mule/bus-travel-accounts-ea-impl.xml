@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+	http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+	
+	
+	<sub-flow name="bus-travel-accounts-ea-get-accounts-sub-flow" doc:id="46dfeec1-89ad-48c0-8f28-11b0d8477132">
+		<set-variable value='#[trim(attributes.queryString replace "email=" with (""))]' doc:name="Initialize emailId" doc:id="26ef051d-dcf1-43bd-91c6-8252e8dca9ad" variableName="emailId"/>
+		<json-logger:logger doc:name="Before Request Logger" doc:id="59feae79-7413-464e-bec0-d3391d4f3e2b" config-ref="JSON_Logger_Config" message="Before Request - bus-travel-accounts-sa-get-accounts" tracePoint="BEFORE_REQUEST" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    personEmail: vars.emailId
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<http:request method="GET" doc:name="bus-travel-accounts-sa-get-accounts" doc:id="12a59c2b-b370-4465-b551-f03b7d84303a" config-ref="bus-travel-accounts-sa-httpsRequestConfig" path="/accounts">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	CUSTOMER_CORRELATION_ID : vars.basicDetails.CUSTOMER_CORRELATION_ID,
+	X_CORRELATION_ID : vars.basicDetails.X_CORRELATION_ID,
+	client_secret : p('secure::https.requester.sa.accounts.client_secret'),
+	client_id : p('https.requester.sa.accounts.client_id')
+}]]]></http:headers>
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	email : vars.emailId
+}]]]></http:query-params>
+			<http:response-validator>
+				<http:success-status-code-validator values="200..599" />
+			</http:response-validator>
+		</http:request>
+		<json-logger:logger doc:name="After Request Logger" doc:id="7a1df10b-26cb-49d2-aa99-a2832a7e5b2c" config-ref="JSON_Logger_Config" message="After Request - bus-travel-accounts-sa-get-accounts" tracePoint="AFTER_REQUEST" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    httpStatus : attributes.StatusCode,
+    (payload: JSONLoggerModule::stringifyNonJSON(payload)) if(attributes.StatusCode != 204 )
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable value="#[attributes.StatusCode as Number]" doc:name="Get HTTP Status from System API" doc:id="fdf56007-d014-4e0d-9aad-c96c5ad4515c" variableName="httpStatus" />
+		<choice doc:name="Choice - Accounts?" doc:id="9e896d94-776c-4343-a1c6-cd72ea440ac6" >
+			<when expression="#[vars.httpStatus == 200]">
+				<ee:transform doc:name="Accounts Response" doc:id="23a527c3-3db6-4be6-b78d-c4d842a8eb74">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Accounts Response" doc:id="9de69584-e6a2-4b94-819d-f855b60d40b7">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	
+    <sub-flow name="bus-travel-accounts-ea-get-account-details-sub-flow" doc:id="c4888b5a-7844-410c-89fe-dbd5903af157">
+		<set-variable value="#[if (attributes.uriParams.id != null) trim(attributes.uriParams.id) else null]" doc:name="Initialize Account Id" doc:id="66092295-2360-497c-988b-8676ded72e44" variableName="accountId"/>
+		<json-logger:logger doc:name="Before Request Logger" doc:id="93f221c1-3b96-4cd0-b3db-836502ce2504" config-ref="JSON_Logger_Config" message="Before Request - bus-travel-accounts-sa-get-account-details" tracePoint="BEFORE_REQUEST" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    "AccountId": vars.accountId
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<http:request method="GET" doc:name="bus-travel-accounts-sa-get-account-details" doc:id="1c6000bd-a641-492e-b919-6af9039e1981" config-ref="bus-travel-accounts-sa-httpsRequestConfig" path="/accounts/{id}">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	CUSTOMER_CORRELATION_ID : vars.basicDetails.CUSTOMER_CORRELATION_ID,
+	X_CORRELATION_ID : vars.basicDetails.X_CORRELATION_ID,
+	client_secret : p('secure::https.requester.sa.accounts.client_secret'),
+	client_id : p('https.requester.sa.accounts.client_id')
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	id : vars.accountId
+}]]]></http:uri-params>
+			<http:response-validator>
+				<http:success-status-code-validator values="200..599" />
+			</http:response-validator>
+		</http:request>
+		<json-logger:logger doc:name="After Request Logger" doc:id="d03fa15c-44a1-4331-a94f-71b5b49538cf" config-ref="JSON_Logger_Config" message="After Request - bus-travel-accounts-sa-get-account-details" tracePoint="AFTER_REQUEST" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    "httpStatus" : attributes.StatusCode,
+     (payload: JSONLoggerModule::stringifyNonJSON(payload)) if(attributes.StatusCode != 204 )
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable value="#[attributes.StatusCode as Number]" doc:name="Get HTTP Status from System API" doc:id="788e6d01-42cb-402b-8244-4b9e7bd6143f" variableName="httpStatus" />
+	    <choice doc:name="Choice - Account Details?" doc:id="15b4ed2e-ccde-48ed-867f-ccbdc7e418ba" >
+			<when expression="#[vars.httpStatus == 200]">
+				<ee:transform doc:name="Account Details Response" doc:id="964587de-9674-4e25-94a5-0bf0fbd8461e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Account Details Response" doc:id="a5910c04-df5a-4763-95e8-49b202f4206b">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+					<ee:variables >
+					</ee:variables>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	
+	<sub-flow name="bus-travel-accounts-ea-post-accounts-sub-flow" doc:id="879f69a1-6a0c-45aa-bd16-9cf5adb877f5" >
+		<json-logger:logger doc:name="Before Request Logger" doc:id="7a2ddddd-9c0b-49cd-a94c-850f20c91da5" config-ref="JSON_Logger_Config" message="Before Request - bus-travel-accounts-sa-create-Accounts" tracePoint="BEFORE_REQUEST" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']" priority="DEBUG"/>
+		<http:request method="POST" doc:name="bus-travel-accounts-sa-create-Accounts" doc:id="55fc730a-e32c-43c3-b082-34447ade7d6f" config-ref="bus-travel-accounts-sa-httpsRequestConfig" path="/accounts">
+				<http:headers><![CDATA[#[output application/java
+---
+{
+	CUSTOMER_CORRELATION_ID : vars.basicDetails.CUSTOMER_CORRELATION_ID,
+	X_CORRELATION_ID : vars.basicDetails.X_CORRELATION_ID,
+	client_secret : p('secure::https.requester.sa.accounts.client_secret'),
+	client_id : p('https.requester.sa.accounts.client_id')
+}]]]></http:headers>
+				<http:response-validator>
+					<http:success-status-code-validator values="200..599" />
+				</http:response-validator>
+			</http:request>
+		<json-logger:logger doc:name="After Request Logger" doc:id="86e07ecc-a519-4ff6-bf16-3e8100295e92" config-ref="JSON_Logger_Config" message="After Request - bus-travel-accounts-sa-create-Accounts" tracePoint="AFTER_REQUEST" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    httpStatus : attributes.StatusCode,
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable value="#[attributes.StatusCode as Number]" doc:name="Get HTTP Status from System API" doc:id="2fee0364-2183-4af2-8081-7f0cbdb68aad" variableName="httpStatus" />
+		<choice doc:name="Choice - Account Creatred?" doc:id="53e7409c-b2f4-405d-98a2-de4ade768147" >
+			<when expression="#[vars.httpStatus == 201]">
+				<ee:transform doc:name="Create Account Response" doc:id="41bf832d-f71f-4a0e-a890-7685e9f7fb04">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Create Account Response" doc:id="a43b0825-bddf-48b7-9080-3dbe46a3144f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	
+	<sub-flow name="bus-travel-accounts-ea-put-accounts-sub-flow" doc:id="a0ad7eb8-b468-4683-beda-634420cedb8c" >
+		<json-logger:logger doc:name="Before Request Logger" doc:id="5e43909d-7541-44a3-8177-8ddb4d3d61d3" config-ref="JSON_Logger_Config" message="Before Request - bus-travel-accounts-sa-update-account" tracePoint="BEFORE_REQUEST" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    "AccountId" : if(attributes.uriParams.id != null) trim(attributes.uriParams.id) else null,
+    payload: JSONLoggerModule::stringifyNonJSON(payload) 
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<http:request method="PUT" doc:name="bus-travel-accounts-sa-update-account" doc:id="87c9d777-089e-4b79-8dd9-c76a7224d7d1" config-ref="bus-travel-accounts-sa-httpsRequestConfig" path="/accounts/{id}">
+				<http:headers ><![CDATA[#[output application/java
+---
+{
+	CUSTOMER_CORRELATION_ID : vars.basicDetails.CUSTOMER_CORRELATION_ID,
+	X_CORRELATION_ID : vars.basicDetails.X_CORRELATION_ID,
+	client_secret : p('secure::https.requester.sa.accounts.client_secret'),
+	client_id : p('https.requester.sa.accounts.client_id')
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	id : attributes.uriParams.id
+}]]]></http:uri-params>
+				<http:response-validator>
+					<http:success-status-code-validator values="200..599" />
+				</http:response-validator>
+			</http:request>
+		<json-logger:logger doc:name="After Request Logger" doc:id="acbe3aa9-8b2e-44b1-acfd-b5995815d7d5" config-ref="JSON_Logger_Config" message="After Request - bus-travel-accounts-sa-update-account" tracePoint="AFTER_REQUEST" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']" priority="DEBUG">
+			<json-logger:content ><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    httpStatus : attributes.StatusCode,
+    payload: JSONLoggerModule::stringifyNonJSON(payload)
+}]]]></json-logger:content>
+		</json-logger:logger>
+		<set-variable value="#[attributes.StatusCode as Number]" doc:name="Get HTTP Status from System API" doc:id="50ef31bd-3b1b-4476-bae8-6569e9c3bb97" variableName="httpStatus" />
+	    <choice doc:name="Choice - Account Updated?" doc:id="750ae60d-2982-454d-a6e7-384ef399544c" >
+			<when expression="#[vars.httpStatus == 200]">
+				<ee:transform doc:name="Update Account Response" doc:id="e6c1081b-7293-451e-9f0f-bc8d617e1b1d">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Update Account Response" doc:id="5b6f983b-6db4-43c8-9474-6ccc3bf1fd09">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+		
+</mule>

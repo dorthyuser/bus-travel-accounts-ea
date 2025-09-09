@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+    <apikit:config name="bus-travel-accounts-ea-config" api="resource::1646e1ef-5dd6-4ed5-973a-0ca5ce210da2:accounts-ea-api:1.0.9:raml:zip:-bus-travel-accounts-ea.raml" raml="-bus-travel-accounts-ea.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="bus-travel-accounts-ea-api">
+        <http:listener path="${https.listener.path}" doc:name="HTTPS Listener" config-ref="bus-travel-accounts-ea-httpsListenerConfig">
+            <http:response statusCode="#[vars.httpStatus default 200]" />
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+            </http:error-response>
+        </http:listener>
+        <ee:transform doc:name="Initialize varaibles" doc:id="b62619c5-e230-4524-888b-3eec28bb7d3a">
+            <ee:message />
+            <ee:variables>
+                <ee:set-variable variableName="basicDetails"><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"CUSTOMER_CORRELATION_ID": if (attributes.headers.'CUSTOMER_CORRELATION_ID' != null) trim(attributes.headers.'CUSTOMER_CORRELATION_ID')  else 'CUSTOMER_CORRELATION_ID_NOT_FOUND',
+	"X_CORRELATION_ID": correlationId,
+	"client_id": if (attributes.headers.'client_id' != null) trim(attributes.headers.'client_id') else null,
+	"httpMethod": attributes.Method,
+	"relativePath": attributes.relativePath	
+}]]></ee:set-variable>
+<ee:set-variable variableName="vRequestMethod"><![CDATA[%dw 2.0
+output application/json
+---
+attributes.Method]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <json-logger:logger doc:name="Start" doc:id="f5ebfd2c-0ea6-4703-bd0a-54c03253dab6" config-ref="JSON_Logger_Config" message="START - Request received" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']">
+            <json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+   basicDetails: vars.basicDetails,
+   payload:  if (vars.vRequestMethod != 'GET')
+    			if(!isEmpty(payload)) JSONLoggerModule::stringifyNonJSON(payload) else null
+    		  else
+    		  	null
+}]]]></json-logger:content>
+        </json-logger:logger>
+		<apikit:router config-ref="bus-travel-accounts-ea-config" />
+        <json-logger:logger doc:name="End" doc:id="0c76a49d-6f0d-44c8-ab5a-610137ab485e" config-ref="JSON_Logger_Config" message="END - Request processing completed" tracePoint="END" correlationId="#[vars.basicDetails.X_CORRELATION_ID default 'MULE-CORRELATIONID-NOTFOUND']">
+            <json-logger:content><![CDATA[#[import modules::JSONLoggerModule output application/json ---
+{
+    (payload: JSONLoggerModule::stringifyNonJSON(payload)) if (attributes.statusCode != 204),
+    basicDetails: vars.basicDetails
+}]]]></json-logger:content>
+        </json-logger:logger>
+		<error-handler ref="global-error-handler" />
+    </flow>
+    <flow name="put:\accounts\(id):application\json:bus-travel-accounts-ea-config">
+        <flow-ref doc:name="bus-travel-accounts-ea-put-accounts-sub-flow" doc:id="a8e79c81-76e6-479a-8978-3116ab9b616c" name="bus-travel-accounts-ea-put-accounts-sub-flow" />
+    </flow>
+    <flow name="get:\accounts:bus-travel-accounts-ea-config">
+        <flow-ref doc:name="bus-travel-accounts-ea-get-accounts-sub-flow" doc:id="9e4608c6-d1f2-40ae-914b-5ab399332f86" name="bus-travel-accounts-ea-get-accounts-sub-flow" />
+    </flow>
+    <flow name="get:\accounts\(id):bus-travel-accounts-ea-config">
+        <flow-ref doc:name="bus-travel-accounts-ea-get-account-details-sub-flow" doc:id="a95c05b6-c85d-4276-ab74-935d73a27848" name="bus-travel-accounts-ea-get-account-details-sub-flow" />
+    </flow>
+    <flow name="post:\accounts:application\json:bus-travel-accounts-ea-config">
+        <flow-ref doc:name="bus-travel-accounts-ea-post-accounts-sub-flow" doc:id="6b72b369-c82d-40a0-9d51-a8cdadcd8d0e" name="bus-travel-accounts-ea-post-accounts-sub-flow" />
+    </flow>
+</mule>

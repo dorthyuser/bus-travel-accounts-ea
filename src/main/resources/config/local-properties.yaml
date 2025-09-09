@@ -1,0 +1,39 @@
+api:
+  version: "v1"
+
+https:  
+  listener:
+    host: "0.0.0.0"
+    port: "8082"
+    path: "api/${api.version}/*"
+  requester:
+    sa:  
+      accounts:
+        host: "localhost"
+        port: "8092"
+        basepath: "/api/v1"
+        response:
+          timeout: "25000"
+        truststore:
+          insecure: "true"
+        client_id: "80c804bc5d854e4ba9cf50bd325d1f99"
+        client_secret: "![hg2XFCILAjdfAl1MHqTfKVOGfmeTSYx5Mf9gm/Y8Rb9A+s8I/bQsSMWSeIp6fA9w]" 
+     
+keystore:
+  file:
+    path: "config/keystore-nonproduction.jks"
+  cert:
+    alias: "mule"
+  keypassword: "![ViVhxiFxv7GnTg+ztpI3mA==]"
+  storepassword: "![GDHArrtbaz9ELRrJM9wLsw==]"
+
+autodiscovery:
+  api: 
+    id: "15667166"
+  
+anypoint:
+  platform:
+    client_id: "a82b5287c958457bab782867ca92fbf2"
+    client_secret: "XXXXXXXXX"
+    base_uri: "https://anypoint.mulesoft.com"
+    analytics_base_uri: "https://analytics-ingest.anypoint.mulesoft.com"

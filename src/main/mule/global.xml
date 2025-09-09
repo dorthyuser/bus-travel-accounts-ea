@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule
+	xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:oauth="http://www.mulesoft.org/schema/mule/oauth"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:api-gateway="http://www.mulesoft.org/schema/mule/api-gateway"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/api-gateway http://www.mulesoft.org/schema/mule/api-gateway/current/mule-api-gateway.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/oauth http://www.mulesoft.org/schema/mule/oauth/current/mule-oauth.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd">
+
+	<!-- https listener config -->
+	<http:listener-config
+		name="bus-travel-accounts-ea-httpsListenerConfig">
+		<http:listener-connection
+			host="${https.listener.host}" port="${https.listener.port}" protocol="HTTPS">
+			<tls:context>
+				<tls:key-store type="jks"
+					path="${keystore.file.path}" alias="${keystore.cert.alias}"
+					keyPassword="${secure::keystore.keypassword}"
+					password="${secure::keystore.storepassword}" />
+			</tls:context>
+		</http:listener-connection>
+	</http:listener-config>
+
+	<!-- https request config -->
+	<http:request-config
+		name="bus-travel-accounts-sa-httpsRequestConfig"
+		doc:name="HTTPS Request configuration"
+		doc:id="a09b7b0b-66d6-4cdb-99aa-e4ddb6b0709c"
+		responseTimeout="${https.requester.sa.accounts.response.timeout}"
+		basePath="${https.requester.sa.accounts.basepath}">
+		<http:request-connection host="${https.requester.sa.accounts.host}"
+			port="${https.requester.sa.accounts.port}" protocol="HTTPS">
+			<reconnection failsDeployment="true">
+				<reconnect frequency="5000" count="5" />
+			</reconnection>
+			<tls:context >
+				<tls:trust-store insecure="${https.requester.sa.accounts.truststore.insecure}" />
+			</tls:context>			
+		</http:request-connection>
+		<http:default-headers >
+		</http:default-headers>
+	</http:request-config>
+
+	<!-- json logger configuration -->
+	<json-logger:config name="JSON_Logger_Config"
+		doc:name="JSON Logger Config"
+		doc:id="65c220f1-9bfa-48c9-9c6e-96d35b2c27ed"
+		environment="${mule.env}" contentFieldsDataMasking="${json.logger.masked.fields}"/>
+
+	<!-- global error handler -->
+	<configuration doc:name="Configuration"
+		doc:id="bf5e53eb-c30a-4201-8809-958064f893e0"
+		defaultErrorHandler-ref="global-error-handler" />
+
+	<!-- Environment Properties -->
+	<global-property name="mule.env" value="local" />
+	<configuration-properties
+		file="config/${mule.env}-properties.yaml"
+		doc:name="Configuration properties" />
+
+	<configuration-properties
+		doc:name="Configuration properties"
+		doc:id="5cadfda1-9c5b-48e5-b5ad-1cd11ada32e0"
+		file="json-logger.properties" />
+
+	<!-- API Autodiscovery Configuration -->
+	<api-gateway:autodiscovery
+		apiId="${autodiscovery.api.id}" flowRef="bus-travel-accounts-ea-api"
+		doc:name="API Autodiscovery" ignoreBasePath="true" />
+
+	<!-- Secure Properties -->
+	<secure-properties:config
+		name="Secure_Properties_Config" doc:name="Secure Properties Config"
+		doc:id="43f1daa0-29ad-49aa-a0f3-8a0d70a9462a"
+		file="config/${mule.env}-properties.yaml" key="${mule.key}" />
+	
+
+</mule>
