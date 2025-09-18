@@ -1,0 +1,13 @@
+https:
+  listener:
+    host: 0.0.0.0
+    port: 3000
+https.requester.sa.accounts:
+  host: ${HTTPS_REQUESTER_SA_ACCOUNTS_HOST}
+  port: ${HTTPS_REQUESTER_SA_ACCOUNTS_PORT}
+  basepath: ${HTTPS_REQUESTER_SA_ACCOUNTS_BASEPATH}
+  response:
+    timeout: ${HTTPS_REQUESTER_SA_ACCOUNTS_RESPONSE_TIMEOUT}
+amazon:
+  s3:
+    bucket: ${AMAZON_S3_BUCKET}
