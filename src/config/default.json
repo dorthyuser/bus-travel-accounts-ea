@@ -1,0 +1,9 @@
+{
+  "app": {
+    "name": "bus-travel-accounts-ea",
+    "version": "1.0.0"
+  },
+  "sa": {
+    "baseUrl": "${SA_BASE_URL}"
+  }
+}

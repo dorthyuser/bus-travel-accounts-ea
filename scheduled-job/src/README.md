@@ -1,0 +1,1 @@
+This scheduled job runs a periodic task derived from the migrated MuleSoft project. Configure the schedule via SCHEDULE_CRON in the root .env (six-field cron: seconds minutes hours day month day-of-week). Example: 0 */5 * * * * (every 5 minutes).

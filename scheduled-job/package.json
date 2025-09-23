@@ -1,0 +1,16 @@
+{
+  "name": "bus-travel-accounts-ea-scheduled-job",
+  "version": "1.0.0",
+  "description": "Scheduled job derived from bus-travel-accounts-ea. Cron configurable via env SCHEDULE_CRON.",
+  "main": "src/job.js",
+  "scripts": {
+    "start": "node src/job.js"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "cron": "^2.1.0",
+    "dotenv": "^16.0.0",
+    "winston": "^3.8.2",
+    "uuid": "^9.0.0"
+  }
+}
