@@ -1,0 +1,20 @@
+micronaut:
+  application:
+    name: bus-travel-accounts-ea
+
+server:
+  port: ${HTTP_PORT:8080}
+
+# External backend (Salesforce / system API) configuration
+https:
+  requester:
+    sa:
+      accounts:
+        base-url: ${HTTPS_REQUESTER_SA_ACCOUNTS_BASE_URL:https://sa-backend.example.com}
+        # the Mule project had separate host/port/basepath; using base-url is simpler in Micronaut
+        client_id: ${HTTPS_REQUESTER_SA_ACCOUNTS_CLIENT_ID:}
+        client_secret: ${HTTPS_REQUESTER_SA_ACCOUNTS_CLIENT_SECRET:}
+        response:
+          timeout: 30000
+
+# Logging configuration can be tuned with standard Micronaut/logback settings

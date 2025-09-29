@@ -1,0 +1,49 @@
+plugins {
+    id "java"
+    id "application"
+    id "io.micronaut.application" version "4.0.0"
+}
+
+group = "com.example"
+version = "1.0"
+sourceCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    micronautVersion = "4.0.0"
+}
+
+dependencies {
+    implementation("io.micronaut:micronaut-runtime")
+    implementation("io.micronaut:micronaut-http-client")
+    implementation("io.micronaut:micronaut-http-server-netty")
+    implementation("io.micronaut:micronaut-validation")
+    implementation("jakarta.annotation:jakarta.annotation-api")
+    implementation("com.fasterxml.jackson.core:jackson-databind")
+
+    testImplementation("io.micronaut:micronaut-http-client")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+}
+
+application {
+    mainClass.set("com.example.Application")
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+micronaut {
+    runtime "netty"
+    testRuntime "junit5"
+    processing {
+        incremental true
+        annotations "com.example.*"
+    }
+}
