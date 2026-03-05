@@ -1,0 +1,15 @@
+micronaut:
+  application:
+    name: bus-travel-accounts-ea
+  logger:
+    level: INFO
+    loggers:
+      org.mule.service.http: WARN
+      org.mule.extension.http: WARN
+
+json:
+  logger:
+    disabled:
+      fields: content
+    masked:
+      fields: firstName, lastName, personBirthdate, phone, mobilePhone, personEmail, mailingStreet, mailingPostalCode, mailingCity, mailingCountry
